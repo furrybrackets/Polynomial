@@ -1,0 +1,11 @@
+{
+  "name": "poly.js",
+  "version": "1.0.0",
+  "description": "A small-sized JS library designed to work with polynomials.",
+  "main": "main.js",
+  "author": "Peter Johnson",
+  "license": "MIT",
+  "dependencies": {
+    "fraction.js": "^4.2.0"
+  }
+}
