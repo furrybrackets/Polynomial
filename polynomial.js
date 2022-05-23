@@ -1,11 +1,40 @@
-const { e } = require("mathjs");
+const Fraction = require('fraction.js');
+
+// converts every element of an array to a Fraction class
+function Complicate(array) {
+    return array.map(function(element) {
+        return new Fraction(element);
+    });
+};
+
+function Normalize(array) {
+    return array.map(function(element) {
+        return Number(element.toString());
+    });
+};
+
 
 class Polynomial {
-    constructor(coefficients) {
+    constructor(coefficients, remainder) {
+        if (remainder) {
+            this.remainder = {
+                // get the remainder of the polynomial when divided by another polynomial
+                n: new Fraction(0),
+                d: new Polynomial("0", false),
+                isActive: false,
+                stringify() {
+                    if (this.isActive) {
+                        return `${this.n.toString()}/${this.d.toString()}`;
+                    } else {
+                        return '';
+                    }
+                }
+            }
+        };
         // check if coefficients are an array or an object and not a string
         if (typeof coefficients == 'object' && Object.prototype.toString.call(coefficients) !== "[object String]") {
             if (coefficients.length > 0) {
-            this.coefficients = coefficients;
+            this.coefficients = Complicate(coefficients);
             } else {
                // check for key pair like:
                // {1: 2, 4: 6} and convert into standard array  
@@ -22,13 +51,15 @@ class Polynomial {
                 for (let key in coefficients) {
                     array[maxKey-key] = coefficients[key];
                 };
-                this.coefficients = array;
-            }
+                this.coefficients = Complicate(array);
+            };
+            return;
         } else {
+            
            // get an array of coefficients from string (e.g. "x^2+2x-3")
-                const ExpArr = coefficients.replace(/\s+/g, '').match(/[+-]?[^+-]+/g);
+            const ExpArr = coefficients.replace(/\s+/g, '').match(/[+-]?[^+-]+/g);
 
-                console.log(ExpArr);
+
             let array = [];
             for (let i = 0; i<ExpArr.length; i++) {
                 // split each term into coefficient and exponent
@@ -39,10 +70,12 @@ class Polynomial {
                     coeff = "1";
                     // check if coefficient is a fraction
                 } else if (coeff.includes('/')) {
-                    const [num, den] = coeff.split('/');
-                    coeff = num/den;
+                    coeff = coeff.split('/');
+                    if (coeff.length > 2) {
+                        throw new Error('Invalid fraction! Fractions should be a/b, not' + coeff);
+                    };
                 }
-                array.push([Number(coeff || 1), this.parsePow(pow)]);
+                array.push([new Fraction(coeff || 1), new Fraction(this.parsePow(pow))]);
         };
 
 
@@ -66,17 +99,20 @@ class Polynomial {
             array1d[maxOrder-array[i][1]] += array[i][0];
         };
 
-        this.coefficients = array1d;
-    }
+        this.coefficients = Complicate(array1d);
     };
+};
 
     // Evaluate the polynomial at x using Horner's method (https://en.wikipedia.org/wiki/Horner%27s_method)
-    eval(x) {
-        let remainder = 0;
+    eval(x, isFrac) {
+        let remainder = Fraction(0);
         for (let i = 0; i<this.coefficients.length; i++) {
-            remainder = remainder*x+this.coefficients[i];
+            remainder = remainder.mul(x).add(this.coefficients[i]);
         };
-        return remainder;
+        if (isFrac) {
+            return remainder.toFraction(true);
+        }
+        return remainder.toString();
     };
 
     parsePow(pow) {
@@ -106,20 +142,20 @@ class Polynomial {
         // match up coefficients
         for (let i = 0; i<max; i++) {
             if (this.coefficients[i] == undefined) {
-                tempCoeff.unshift(0);
+                tempCoeff.unshift(Fraction(0));
             } else if (poly.coefficients[i] == undefined) {
-                poly.coefficients.unshift(0);
+                poly.coefficients.unshift(Fraction(0));
             };
         };
         for (let i = 0; i<max; i++) {
-            array.push(tempCoeff[i]+poly.coefficients[i]);
+            array.push(tempCoeff[i].add(poly.coefficients[i]));
         };
 
         // remove leading zeros
-        while (array[0] == 0) {
+        while (array[0] == Fraction(0)) {
             array.shift();
         };
-        this.coefficients = array;
+        this.coefficients = Complicate(array);
 
         return this;
     };
@@ -151,11 +187,11 @@ class Polynomial {
                     }
                 } else {
                 if (i == 0) {
-                    string += this.coefficients[order-i];
+                    string += this.coefficients[order-i].toFraction(true);
                 } else if (i == 1) {
-                    string += this.coefficients[order-i] + 'x';
+                    string += this.coefficients[order-i].toFraction(true) + 'x';
                 } else {
-                    string += this.coefficients[order-i] + 'x^' + i;
+                    string += this.coefficients[order-i].toFraction(true) + 'x^' + i;
                 }
             }
         }
@@ -184,20 +220,20 @@ class Polynomial {
         // match up coefficients
         for (let i = 0; i<max; i++) {
             if (this.coefficients[i] == undefined) {
-                tempCoeff.unshift(0);
+                tempCoeff.unshift(Fraction(0));
             } else if (poly.coefficients[i] == undefined) {
-                poly.coefficients.unshift(0);
+                poly.coefficients.unshift(Fraction(0));
             };
         };
         for (let i = 0; i<max; i++) {
-            array.push(tempCoeff[i]-poly.coefficients[i]);
+            array.push(tempCoeff[i].sub(poly.coefficients[i]));
         };
 
         // remove leading zeros
         while (array[0] == 0) {
             array.shift();
         };
-        this.coefficients = array;
+        this.coefficients = Complicate(array);
 
         return this;
     };
@@ -218,9 +254,9 @@ class Polynomial {
         for (let i = 0; i<this.coefficients.length; i++) {
             for (let j = 0; j<poly.coefficients.length; j++) {
                 if (array[i+j] == undefined) {
-                    array[i+j] = 0;
+                    array[i+j] = Fraction(0);
                 };
-                array[i+j] += tempCoeff[i]*poly.coefficients[j];
+                array[i+j] = array[i+j].add(tempCoeff[i].mul(poly.coefficients[j]));
             };
         };
 
@@ -228,7 +264,7 @@ class Polynomial {
         while (array[0] == 0) {
             array.shift();
         };
-        this.coefficients = array;
+        this.coefficients = Complicate(array);
 
         return this;
     }
@@ -246,13 +282,60 @@ class Polynomial {
 
         // x^n -> nx^(n-1)
         for (let i = 0; i<array.length; i++) {
-            array[i] *= i+1;
+            array[i] = array[i].mul(i+1);
         };
 
-        this.coefficients = array.reverse();
+        this.coefficients = Complicate(array.reverse());
 
         return this;
     };
+
+    integral() {
+        let array = this.coefficients.reverse();
+
+        // apply integral rule x^n = x^n+1/(n+1)
+        
+        // fix coefficients
+        for (let i = 0; i<array.length; i++) {
+            array[i] = array[i].div(i+1);
+        };
+
+        // add constant term of 0
+        array.unshift(Fraction(0));
+
+        array.reverse();
+
+        // remove leading zeros
+        while (array[0] == 0) {
+            array.shift();
+        };
+
+        this.coefficients = Complicate(array);
+
+        return this;
+    };
+
+    derivN(n) {
+        for (let i = 0; i<n; i++) {
+            this.deriv();
+        };
+        return this;
+    };
+
+    intergralN(n) {
+        for (let i = 0; i<n; i++) {
+            this.integral();
+        };
+        return this;
+    };
+
+    div(polynomial) {
+         return this;
+    };
+
+    getCoefficients() {
+        return Normalize(this.coefficients);
+    }
 };
 
 module.exports = {
