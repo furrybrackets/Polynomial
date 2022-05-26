@@ -9,7 +9,8 @@ function Complicate(array) {
 
 function Normalize(array) {
     return array.map(function(element) {
-        return Number(element.toString());
+        console.log(element.toString());
+        return element.toString();
     });
 };
 
@@ -187,11 +188,11 @@ class Polynomial {
                     }
                 } else {
                 if (i == 0) {
-                    string += this.coefficients[order-i].toFraction(true);
+                    string += this.coefficients[order-i].toFraction();
                 } else if (i == 1) {
-                    string += this.coefficients[order-i].toFraction(true) + 'x';
+                    string += this.coefficients[order-i].toFraction() + 'x';
                 } else {
-                    string += this.coefficients[order-i].toFraction(true) + 'x^' + i;
+                    string += this.coefficients[order-i].toFraction() + 'x^' + i;
                 }
             }
         }
@@ -327,10 +328,6 @@ class Polynomial {
             this.integral();
         };
         return this;
-    };
-
-    div(polynomial) {
-         return this;
     };
 
     getCoefficients() {
