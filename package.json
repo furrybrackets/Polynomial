@@ -1,6 +1,6 @@
 {
   "name": "polynomials",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A small-sized JS library designed to work with polynomials.",
   "main": "main.js",
   "author": "Peter Johnson <integral.sketch@gmail.com>",

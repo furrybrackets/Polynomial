@@ -61,7 +61,8 @@ e.deriv().toString() // 2x+2
 ### `Polynomial.gen()` demo
 
 ```js
-import { Polynomial } from 'polynomials';
+// or const Polynomial = require('polynomials');
+import * from 'polynomials';
 
 const p = new Polynomial("x^2+6x+2", false);
 
